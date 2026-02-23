@@ -1,0 +1,93 @@
+.login-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(160deg, var(--gray-900) 0%, var(--gray-800) 50%, var(--gray-900) 100%);
+  padding: var(--space-4);
+}
+
+.login-card {
+  background: var(--bg-surface);
+  padding: var(--space-8);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-xl);
+  width: 100%;
+  max-width: 400px;
+  border: 1px solid var(--border-color);
+}
+
+.login-card h1 {
+  text-align: center;
+  margin: 0 0 var(--space-1);
+  color: var(--text-primary);
+  font-size: 1.5rem;
+  font-weight: 700;
+}
+
+.login-card .subtitle {
+  text-align: center;
+  color: var(--text-muted);
+  margin: 0 0 var(--space-6);
+  font-size: 0.9375rem;
+}
+
+.login-card form {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+}
+
+.login-card .field label {
+  display: block;
+  margin-bottom: var(--space-2);
+  font-weight: 500;
+  font-size: 0.875rem;
+  color: var(--text-secondary);
+}
+
+.login-card .field input {
+  width: 100%;
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius);
+  font-size: 0.9375rem;
+  font-family: inherit;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+}
+
+.login-card .field input:focus {
+  outline: none;
+  border-color: var(--primary-500);
+  box-shadow: 0 0 0 3px rgba(79, 70, 229, 0.15);
+}
+
+.login-card button {
+  padding: var(--space-3) var(--space-4);
+  background: var(--primary-600);
+  color: white;
+  border: none;
+  border-radius: var(--radius);
+  font-size: 0.9375rem;
+  font-weight: 600;
+  cursor: pointer;
+  margin-top: var(--space-2);
+  transition: background var(--transition-fast);
+}
+
+.login-card button:hover:not(:disabled) {
+  background: var(--primary-700);
+}
+
+.login-card button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.login-page .error {
+  background: var(--danger-bg);
+  color: var(--danger);
+  padding: var(--space-3);
+  border-radius: var(--radius);
+  font-size: 0.875rem;
+}

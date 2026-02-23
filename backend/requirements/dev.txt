@@ -1,0 +1,4 @@
+-r base.txt
+django-extensions>=3.2
+django-debug-toolbar>=4.2
+drf-spectacular>=0.27

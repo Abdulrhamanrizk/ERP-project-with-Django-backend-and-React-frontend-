@@ -33,6 +33,13 @@ class ProductViewSet(viewsets.ModelViewSet):
     filterset_fields = ['organization', 'category', 'track_serial', 'is_active']
     search_fields = ['name', 'sku', 'barcode']
 
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        barcode = (self.request.query_params.get('barcode') or '').strip()
+        if barcode:
+            return queryset.filter(barcode=barcode, is_active=True).order_by('id')
+        return queryset
+
     def get_serializer_class(self):
         if self.action in ('create', 'update', 'partial_update'):
             return ProductWriteSerializer

@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useHotkeys } from 'react-hotkeys-hook'
 import { api } from '../api/client'
@@ -96,6 +96,10 @@ export default function Sales() {
   const [returnDate, setReturnDate] = useState(new Date().toISOString().slice(0, 10))
   const [returnNotes, setReturnNotes] = useState('')
   const [returnSubmitting, setReturnSubmitting] = useState(false)
+  const [barcodeInput, setBarcodeInput] = useState('')
+  const [barcodeError, setBarcodeError] = useState('')
+  const [barcodeLookupLoading, setBarcodeLookupLoading] = useState(false)
+  const barcodeInputRef = useRef<HTMLInputElement | null>(null)
 
   useHotkeys('ctrl+n', (e) => {
     if (can('manage_sales')) {
@@ -238,6 +242,69 @@ export default function Sales() {
     setSaleItems(next)
   }
 
+  const addProductToSaleItems = useCallback((product: Product) => {
+    setSaleItems((prev) => {
+      const existingIdx = prev.findIndex((item) => Number(item.product_id) === product.id)
+      if (existingIdx >= 0) {
+        const next = [...prev]
+        const currentQty = parseFloat(next[existingIdx].quantity) || 0
+        next[existingIdx] = { ...next[existingIdx], quantity: String(currentQty + 1) }
+        return next
+      }
+      const emptyIdx = prev.findIndex((item) => !item.product_id)
+      const next = [...prev]
+      const newItem: SaleItemRow = {
+        product_id: String(product.id),
+        product_name: product.name,
+        quantity: '1',
+        unit_price: '',
+        discount: '0',
+      }
+      if (emptyIdx >= 0) {
+        next[emptyIdx] = newItem
+      } else {
+        next.push(newItem)
+      }
+      return next
+    })
+  }, [])
+
+  const handleBarcodeKeyDown = useCallback((e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key !== 'Enter' || barcodeLookupLoading) return
+    e.preventDefault()
+    const barcode = barcodeInput.trim()
+    if (!barcode) return
+
+    const orgId = branches.find((b) => b.id === Number(form.branch))?.organization
+    if (!orgId) {
+      setBarcodeError('اختر الفرع أولاً')
+      requestAnimationFrame(() => barcodeInputRef.current?.focus())
+      return
+    }
+
+    setBarcodeLookupLoading(true)
+    setBarcodeError('')
+
+    api.get<{ results: Product[] }>(`/inventory/products/?organization=${orgId}&barcode=${encodeURIComponent(barcode)}`)
+      .then((res) => {
+        const found = Array.isArray(res) ? res : (res as { results?: Product[] }).results || []
+        if (found.length === 1) {
+          addProductToSaleItems(found[0])
+          setBarcodeInput('')
+          setBarcodeError('')
+        } else if (found.length === 0) {
+          setBarcodeError('الباركود غير موجود')
+        } else {
+          setBarcodeError('يوجد أكثر من منتج بنفس الباركود')
+        }
+      })
+      .catch(() => setBarcodeError('الباركود غير موجود'))
+      .finally(() => {
+        setBarcodeLookupLoading(false)
+        requestAnimationFrame(() => barcodeInputRef.current?.focus())
+      })
+  }, [barcodeInput, barcodeLookupLoading, branches, form.branch, addProductToSaleItems])
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
     if (!form.branch || saleItems.every((r) => !r.product_id || !r.quantity || !r.unit_price)) return
@@ -269,6 +336,8 @@ export default function Sales() {
         setShowModal(false)
         setForm({ branch: '', customer: '', sale_date: new Date().toISOString().slice(0, 10), payment_type: 'credit', cash_account: '', notes: '' })
         setSaleItems([{ product_id: '', product_name: '', quantity: '1', unit_price: '', discount: '0' }])
+        setBarcodeInput('')
+        setBarcodeError('')
         load()
       })
       .catch(() => {})
@@ -345,6 +414,22 @@ export default function Sales() {
                 </select>
               </div>
             )}
+          </div>
+          <div className="form-group">
+            <label>مسح باركود</label>
+            <input
+              ref={barcodeInputRef}
+              type="text"
+              value={barcodeInput}
+              onChange={(e) => {
+                setBarcodeInput(e.target.value)
+                if (barcodeError) setBarcodeError('')
+              }}
+              onKeyDown={handleBarcodeKeyDown}
+              placeholder="امسح الباركود هنا"
+              disabled={barcodeLookupLoading}
+            />
+            {barcodeError && <small className="text-danger">{barcodeError}</small>}
           </div>
           <div className="form-group">
             <label>بنود الفاتورة</label>
